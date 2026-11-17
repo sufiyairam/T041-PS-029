@@ -44,8 +44,8 @@ Where the brief or data was unclear, we made a choice. Each one is a single sett
 - BR-05 Timeliness (60 / 90 days)
 - BR-06 Duplicates
 - BR-07 Team meals, attendees, alcohol
-- BR-08 Approval chain (coming)
-- BR-09 SLA and escalation (coming)
-- BR-10 Currency conversion (coded in convert_to_inr)
-- BR-11 Taxability (coming)
-- BR-12 Settlement (coming)
+- BR-08 Approval chain
+- BR-09 SLA and escalation
+- BR-10 Currency conversion
+- BR-11 Taxability
+- BR-12 Settlement 

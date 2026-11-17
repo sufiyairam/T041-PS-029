@@ -1,0 +1,5 @@
+cost_centre,name,head_employee_id
+CC-000,Corporate,EMP-001
+CC-100,Sales,EMP-003
+CC-200,Engineering,EMP-004
+CC-300,Operations,EMP-005

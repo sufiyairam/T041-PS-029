@@ -1,0 +1,26 @@
+city,country,tier,currency
+Bengaluru,India,1,INR
+Mumbai,India,1,INR
+Delhi,India,1,INR
+Chennai,India,1,INR
+Hyderabad,India,1,INR
+Kolkata,India,1,INR
+Pune,India,1,INR
+Ahmedabad,India,2,INR
+Jaipur,India,2,INR
+Kochi,India,2,INR
+Coimbatore,India,2,INR
+Lucknow,India,2,INR
+Indore,India,2,INR
+Nagpur,India,2,INR
+Mysuru,India,3,INR
+Hubballi,India,3,INR
+Mangaluru,India,3,INR
+Belagavi,India,3,INR
+Udupi,India,3,INR
+Shivamogga,India,3,INR
+Singapore,Singapore,INTL,SGD
+Dubai,UAE,INTL,AED
+London,UK,INTL,GBP
+San Francisco,USA,INTL,USD
+Frankfurt,Germany,INTL,EUR

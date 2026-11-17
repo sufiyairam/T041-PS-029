@@ -1,0 +1,5 @@
+scope,rate,currency,half_day_rule
+TIER1,1000.00,INR,travel day under 8 hours away pays 50%
+TIER2,750.00,INR,same
+TIER3,750.00,INR,same
+INTL,50.00,USD,same

@@ -77,7 +77,9 @@ class TestRobustness(unittest.TestCase):
         done, _ = run_main_on(os.path.join(tempfile.gettempdir(), "no_such_folder_xyz"), tempfile.gettempdir())
         self.assertNotEqual(done.returncode, 0)
         self.assertIn("Could not find an input file", done.stderr)
-        self.assertNotIn("Traceback", done.stderr)
+        # A crash inside OUR program would print a traceback that names main.py.
+        # (Some environments print their own unrelated start-up messages, which we ignore.)
+        self.assertNotRegex(done.stderr, r'File ".*main\.py"')
 
     def test_empty_command_file_runs(self):
         data = copy_data()
@@ -97,6 +99,23 @@ class TestRobustness(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         refused = list(csv.DictReader(open(os.path.join(out, "rejected_commands.csv"))))
         self.assertEqual(len(refused), 3 + 4)
+
+    def test_per_diem_excess_flows_into_settlement_taxable_total(self):
+        # CLM-001 is APPROVED and already has the E5 (CEO) in its chain because of a hotel exception.
+        # Raise one tier-2 per diem from 750 to 1,200: taxable +450, approved +450.
+        data = copy_data()
+        state = {"done": False}
+        def bump(rows):
+            for row in rows:
+                if row["claim_id"] == "CLM-001" and row["category"] == "PER_DIEM" and not state["done"]:
+                    row["amount"] = "1200.00"; state["done"] = True
+        rewrite_csv(os.path.join(data, "claim_lines.csv"), bump)
+        done, out = run_main_on(data, tempfile.gettempdir())
+        self.assertEqual(done.returncode, 0, done.stderr)
+        row = next(r for r in csv.DictReader(open(os.path.join(out, "claim_settlement.csv"))) if r["claim_id"] == "CLM-001")
+        self.assertEqual(row["final_state"], "APPROVED")
+        self.assertEqual(row["taxable_total_inr"], "3106.00")       # 2,656 hotel + 450 per diem
+        self.assertEqual(row["approved_total_inr"], "14336.00")      # 13,886 + 450
 
     def test_missing_fx_date_uses_latest_earlier_rate(self):
         rates = {("USD", "2026-09-08"): 83.0, ("USD", "2026-09-09"): 83.4}

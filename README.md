@@ -6,6 +6,13 @@
 
 ---
 
+## Demo video (5 minutes)
+
+**Video link: ADD THE LINK HERE AFTER RECORDING** (for example a YouTube "unlisted" or Google Drive link, with sharing turned on).
+The recording plan is in [`DEMO_SCRIPT.md`](DEMO_SCRIPT.md).
+
+---
+
 ## 1. What this project does
 
 A company's finance team receives expense claims from employees. This program does the finance team's work automatically. It is command-file driven and has no UI.
@@ -36,7 +43,7 @@ Other useful commands:
 
 | Command | What it does |
 |---|---|
-| `python run_all_tests.py` | Runs all 115 tests. The last line should say `OK`. |
+| `python run_all_tests.py` | Runs all 121 tests. The last line should say `OK`. |
 | `python verify_outputs.py` | Independent self-check of the output files (26 checks, including the 8 edge cases in the brief). Run `python main.py` first. |
 | `python show_chains.py` | Prints the approval chain of every claim. |
 
@@ -73,7 +80,7 @@ Files saved from Excel ("CSV UTF-8"), Windows line endings, extra spaces and bla
 | ID | Rule | Code |
 |---|---|---|
 | BR-01 | **Hotel cap** per night by grade and city tier. Above cap is EXCEPTION, above 150% of cap is REJECTED, E5 has no cap | `rules.check_hotel` |
-| BR-02 | **Per diem**: Rs 1,000 tier 1, Rs 750 tier 2/3, USD 50 abroad. Half on travel days under 8 hours. Cannot be claimed together with itemised meals the same day | `rules.check_per_diem` |
+| BR-02 | **Per diem**: Rs 1,000 tier 1, Rs 750 tier 2/3, USD 50 abroad. Half on travel days under 8 hours. Cannot be claimed together with itemised meals the same day. Above a full day's rate is an EXCEPTION; a full-day claim on a short travel day is CAPPED at the half rate | `rules.check_per_diem` |
 | BR-03 | **Travel class**: higher class is CAPPED at the entitled fare, or EXCEPTION if no fare is given. Business only for E4/E5 on flights over 4 hours | `rules.check_travel` |
 | BR-04 | **Receipts**: needed above Rs 500. At most 3 lines of Rs 500 or less may have no receipt, the 4th and later are rejected | `rules.check_receipts` |
 | BR-05 | **Timeliness**: up to 60 days fine, 61 to 90 days EXCEPTION, over 90 days REJECTED | `rules.check_timeliness` |
@@ -82,7 +89,7 @@ Files saved from Excel ("CSV UTF-8"), Windows line endings, extra spaces and bla
 | BR-08 | **Approval chain**: up to Rs 10,000 manager. Up to Rs 50,000 manager and cost-centre head. Above that the finance controller too. Any EXCEPTION adds E5. Nobody approves their own claim or a peer's | `approvals.py` |
 | BR-09 | **SLA**: 3 working days per approver, then automatic escalation to their manager. Two breaches in a row at the top auto-approve (no exception lines) or return (exception lines). RETURN stops the clock and RESUBMIT restarts it | `workflow.py`, `calendar_rules.py` |
 | BR-10 | **Currency**: policy rate of the expense date. A card rate within 2% (2.0% included) is used instead | `rules.convert_to_inr` |
-| BR-11 | **Taxability**: the part of an approved hotel exception above the cap is a taxable perquisite | `pipeline.py`, `settlement.py` |
+| BR-11 | **Taxability**: the part of an approved EXCEPTION above its cap (hotel or per diem) is a taxable perquisite, and so is domestic per diem above Rs 1,000 a day. Reported per claim, not deducted from the payout | `rules.compute_taxable_amount`, `settlement.py` |
 | BR-12 | **Settlement**: advance is netted first. If the advance is larger, the payout is 0 and the rest is recovered from salary. Pay within 5 working days of final approval | `settlement.py` |
 
 ## 6. Edge cases from the brief, and where they are tested
@@ -118,7 +125,7 @@ T041-PS-029/
   decision_log.md      every choice we made where the brief was unclear
   data/                input files
   output/              result files
-  tests/               115 automated tests
+  tests/               121 automated tests
 ```
 
 ## 8. Decision log

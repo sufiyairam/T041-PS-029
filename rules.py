@@ -234,7 +234,8 @@ def check_per_diem(result, line, city_tiers, per_diem_rates, lines_same_day):
        1. If the employee also claimed itemised meals that day -> REJECTED.
        2. Daily rate: tier 1 = 1000, tier 2/3 = 750, international = 50 USD.
        3. Travel day under 8 hours away -> half the rate.
-       4. Claimed more than the rate -> CAPPED at the rate.
+       4. Claimed more than a full day's rate -> EXCEPTION (taxable excess, BR-11).
+          Claimed a full day on a short travel day -> CAPPED at the half rate.
 
        per_diem_rates : from load_per_diem()  {"TIER1": 1000.0, "INTL": 50.0}
     """
@@ -255,13 +256,24 @@ def check_per_diem(result, line, city_tiers, per_diem_rates, lines_same_day):
     scope = "INTL" if tier == "INTL" else "TIER" + tier
     daily_rate = D(per_diem_rates[scope])
 
+    result["per_diem_domestic"] = (tier != "INTL")      # used by the tax rule (BR-11)
+    full_limit_inr = money(daily_rate * result["rate_used"])
+
     # 3. half per diem on short travel days
     if line["hours_away"] != "NA" and D(line["hours_away"]) < HALF_DAY_HOURS:
         daily_rate = daily_rate / 2
 
-    # 4. cap it. Convert the limit to rupees with the same rate used for the claim.
+    # 4. compare with the limit for THIS day (converted with the same rate as the claim)
     limit_inr = money(daily_rate * result["rate_used"])
-    if result["amount_inr"] > limit_inr:
+    amount = result["amount_inr"]
+    if amount > full_limit_inr:
+        # DECISION LOG #32: more than a FULL day's rate is beyond the policy cap, so it is an
+        # EXCEPTION (needs E5), exactly like a hotel above its cap. It is payable if approved,
+        # and the part above the day's limit is a taxable perquisite (BR-11).
+        apply_decision(result, "EXCEPTION", BR_PER_DIEM)
+        result["cap_excess"] = amount - limit_inr
+    elif amount > limit_inr:
+        # claimed a full day on a short travel day (under 8 hours): just reduced to half
         apply_decision(result, "CAPPED", BR_PER_DIEM, allowed_amount=limit_inr)
 
 
@@ -359,7 +371,7 @@ def check_team_meal(result, line, grade, employees):
           claimed by grade E3 or higher.
        3. TEAM_MEAL: Rs 1,200 per attendee cap  -> CAPPED at 1200 x attendees
        4. TEAM_MEAL with MORE than 10 attendees -> allowed, but needs E4 approval
-          (we add the flag NEEDS_E4_APPROVAL; the approval chain uses it in Step 6)
+          (we add the flag NEEDS_E4_APPROVAL; approvals.build_chain uses it)
 
        employees : from load_employees()
     """
@@ -451,3 +463,27 @@ def check_duplicates(all_claims, results_by_key):
                     for res in (res_a, res_b):
                         if "DUPLICATE_VENDOR_FLAG" not in res["flags"]:
                             res["flags"].append("DUPLICATE_VENDOR_FLAG")
+
+
+# ===============================================================
+# BR-11 : taxable amount of ONE line  (reported only; settlement counts it for APPROVED claims)
+# ===============================================================
+BR_TAX = "BR-11"
+PER_DIEM_TAX_FREE_LIMIT = Decimal("1000")      # domestic per diem above Rs 1,000 a day is taxable
+
+
+def compute_taxable_amount(result):
+    """Two clauses of the brief:
+       1. Reimbursement beyond a policy cap that is approved as an EXCEPTION is a taxable
+          perquisite: the part ABOVE THE CAP (hotel, per diem).   -> cap_excess
+       2. Domestic per diem above Rs 1,000 per day is taxable:     -> paid amount minus 1,000
+          (clause 2 is data driven: it matters if per_diem.csv ever allows more than 1,000.)
+       A rejected line is not paid, so nothing is taxable."""
+    taxable = Decimal("0.00")
+    if result["decision"] == "REJECTED":
+        return taxable
+    if result["decision"] == "EXCEPTION":
+        taxable = result.get("cap_excess", Decimal("0.00"))
+    if result["category"] == "PER_DIEM" and result.get("per_diem_domestic"):
+        taxable = max(taxable, result["allowed_amount"] - PER_DIEM_TAX_FREE_LIMIT)
+    return money(max(taxable, Decimal("0.00")))

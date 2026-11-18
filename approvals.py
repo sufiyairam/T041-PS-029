@@ -1,5 +1,5 @@
 """
-approvals.py  -  STEP 6: build the approval chain for a claim  (BR-08)
+approvals.py  -  build the approval chain for a claim  (BR-08)
 
 The chain is the ORDERED list of people who must approve, one after another.
 

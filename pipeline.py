@@ -18,13 +18,14 @@ from loader import (load_claims, load_employees, load_fx_rates, load_city_tiers,
                     load_hotel_caps, load_per_diem, load_travel_entitlements)
 from rules import (convert_to_inr, new_result, check_timeliness, check_hotel,
                    check_per_diem, check_travel, check_team_meal, check_receipts,
-                   check_duplicates, lines_for_meal_check)
+                   check_duplicates, lines_for_meal_check, compute_taxable_amount)
 
 from paths import output_folder
 
-# DECISION LOG #6: only the part of a HOTEL exception ABOVE THE CAP is taxable.
+# DECISION LOG #9: only the part of a HOTEL or PER DIEM exception ABOVE THE CAP is taxable.
 #   Other exceptions (late claim, travel class with no entitled fare) have no
 #   cap amount to compare with, so nothing is taxable there.
+#   Domestic per diem above Rs 1,000 a day is taxable too (see rules.compute_taxable_amount).
 #   The taxable_amount in line_decisions.csv is what WOULD be taxable if the
 #   exception is approved. Settlement (Step 8) counts it only for approved claims.
 
@@ -61,9 +62,8 @@ def validate_all():
 
     check_duplicates(claims, results_by_key)               # needs all claims
 
-    for result in results_by_key.values():                 # taxable amount
-        if result["decision"] == "EXCEPTION":
-            result["taxable_amount"] = result.get("cap_excess", Decimal("0.00"))
+    for result in results_by_key.values():                 # taxable amount (BR-11)
+        result["taxable_amount"] = compute_taxable_amount(result)
     return claims, results_by_key
 
 

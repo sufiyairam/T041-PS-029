@@ -8,7 +8,6 @@
 
 ## Demo video (5 minutes)
 
-**Video link: ADD THE LINK HERE AFTER RECORDING** (for example a YouTube "unlisted" or Google Drive link, with sharing turned on).
 The recording plan is in https://drive.google.com/file/d/1kxkswRfNmAxfRn1c0qVilyph15xDjxRH/view?usp=sharing
 
 ---
